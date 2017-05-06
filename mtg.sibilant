@@ -1,0 +1,15 @@
+(var a  {life 20 }
+     m { life 20 })
+
+(def loose-life (player amount)
+  (assign player.life (- player.life amount)))
+(def gain-life (player amount)
+  (assign player.life (+ player.life amount)))
+(loose-life a 4)
+
+(gain-life m 3)
+
+(loose-life m 5)
+
+(loose-life a 7)
+(console.log a)

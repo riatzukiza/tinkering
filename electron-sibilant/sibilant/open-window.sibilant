@@ -1,0 +1,40 @@
+
+(namespace electron)
+(include "kit/macros")
+(import-namespace kit)
+
+(require! (lit app Browser-window) "electron"
+          program "commander"
+          Path "path")
+
+(macro do-on (emitter event ...body)
+       `(on @emitter @event () ...@body))
+
+(var (lit path width height frame)
+
+     (pipe program
+           (.option "-p, --path" "path to look for index.html file")
+           (.option "-w, --width" "width of browser frame")
+           (.option "-h, --height" "height of browser frame")
+           (.option "-f, --frame" "somthing about a frame")
+
+           (.parse process.argv)))
+
+(var Window null)
+
+app.commandLine.appendSwitch("enable-unsafe-es3-apis");
+app.commandLine.appendSwitch("use-gl", "desktop");
+app.commandLine.appendSwitch("js-flags", "--harmony-simd --harmony-sharedarraybuffer --enable-blink-feature=SharedArrayBuffer --use_strict");
+
+
+(pipe app
+
+      (do-on  "window-all-closed"
+        (unless (= process.platform 'darwin ) (.quit app)))
+
+      (do-on 'ready
+
+        (assign Window (new Browser-window (lit width height frame)))
+        (.loadURL ("file://" (Path.resolve path)))
+
+        (do-on Window 'close (assign Window null))))

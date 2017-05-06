@@ -1,0 +1,38 @@
+(include "./kit/macros")
+(import-namespace kit)
+(def find (year-length range required-matches gradient total-people matches )
+  (print "matches" matches)
+  (if (>= (- 1 matches) required-matches)
+      total-people
+      (birthday
+       year-length
+       range
+       required-matches
+       gradient
+       (+ gradient total-people))))
+(def birthday (year-length
+               range
+               required-matches
+               (default gradient 0.5)
+               (default total-people 0)
+               )
+
+  (print 'year-length 'range 'required-matches 'gradient 'total-people)
+  (print year-length "    " range "   " required-matches "    " gradient "    " total-people)
+  (find
+
+   year-length
+   range
+   required-matches
+   gradient
+
+   total-people
+   (- 1 (Math.exp (/ (- year-length range ) year-length)
+                  (/ (* total-people (- total-people 1)) required-matches)))))
+
+(print (- 1 ))
+
+(Math.exp (/ 364 365) (* 100 (/ (- 100 1) 2)))
+(+ (/ 1 2) (Math.sqrt (+ (/ 1 4) (* 2))))
+
+(birthday 10 1 3)

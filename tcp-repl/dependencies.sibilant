@@ -1,0 +1,18 @@
+
+(include "./macros")
+
+
+
+(require! 'fs 'http 'net 'express 'chokidar 'readline 'vm
+
+          Path 'path
+
+          program 'commander
+
+          (lit create extend mixin) "./kit/js/util"
+          )
+
+(include "./kit/src/sibilant-context.sibilant")
+
+(include "./s-expr.sibilant"
+         "./messages.sibilant")

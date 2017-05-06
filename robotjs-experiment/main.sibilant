@@ -1,0 +1,32 @@
+(namespace robotjs)
+
+(include "../kit/macros")
+(import-namespace kit)
+
+(require! 'robotjs)
+
+(.set-mouse-delay robotjs 2)
+(var two-pi (* Math.PI 2)
+     screen-size (.get-screen-size robotjs))
+
+(macro for! (var-exp cond inc ...body)
+       (var index-name (first var-exp.contents)
+            index-initial (second var-exp.contents))
+
+       ["for (" `(var @index-name @index-initial) cond ";" inc")" "\n{\n" 
+       ...(interleave ";\n" body) "\n}\n"])
+(macro for-up-to (index-name limit ...body)
+       "execute a code fragment `limit` times, making available the current index via `index-name`. Typically used to itterate over lists."
+
+       `(for! ( @index-name 0) (< @index-name @limit ) (++ @index-name)
+              ...@body))
+(var height (- (/  screen-size.height 2) 10)
+     width screen-size.width
+     )
+
+(var y 0)
+(print height width)
+(for-up-to x width
+           (assign y (+ (* height (Math.sin (/ (* two-pi x) width))) height))
+           (print x y)
+           (.move-mouse robotjs x y))

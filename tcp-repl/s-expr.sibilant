@@ -1,0 +1,24 @@
+
+(var S-expr {})
+
+(describe S-expr
+          (fragment "")
+          (init ((open-braces 0) (close-braces 0))))
+
+(var create-s-expr (create S-expr))
+
+(def count-braces (char s-exp)
+  (if (match-regex? char "[\\}\\]\\)]")
+      (++ s-exp.open-braces)
+      (match-regex? char "[\\{\\(\\[]")
+      (++ s-exp.close-braces)))
+
+(def accumulate-braced-form (char s-exp callback)
+  (count-braces char s-exp)
+  (incr-by s-exp.fragment char)
+
+  (when (= s-exp.open-braces s-exp.close-braces)
+    (var program s-exp.fragment)
+    (assign s-exp.fragment "")
+    (callback program)
+    ))

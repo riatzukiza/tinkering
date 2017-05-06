@@ -1,0 +1,134 @@
+
+
+(include "kit/macros"
+         "kit/util")
+
+(import-namespace kit)
+
+(include "./macros")
+
+
+(require! 'fs 'http 'net 'express 'chokidar 'readline 'vm 'crypto
+
+          Path 'path
+
+          program 'commander
+
+          (lit create extend mixin) "kit/js/util"
+          )
+
+
+(include
+
+ "kit/src/sibilant-context.sibilant"
+ "./s-expr.sibilant"
+ "./messages.sibilant"
+ "./commandline-arguments.sibilant"
+ )
+
+
+
+(var connections (new Map)
+
+     rl (.create-interface readline
+                           (lit (input process.stdin)
+                                (output process.stdout)))
+     mediator null
+     remote-socket null)
+
+(var Base-context (lit
+                   fs http net vm crypto Path
+
+                   express readline
+
+                   chokidar program
+                   create mixin extend
+
+                   connections mediator
+                   ))
+
+;; (var Connection {})
+;; (describe Connection
+;;           (init (*socket)))
+(macro call-method (obj str ...args)
+       `((get @obj @str) ...@args))
+
+(def mediate (socket )
+
+  (.set connections socket.remote-address socket)
+
+  (let ((s-expr (create-s-expr))
+        (message null))
+
+    (pipe socket
+          (loop (on  'data (d))
+
+             (each-char-of (.to-string d))
+             (accumulate-braced-form char s-expr)
+
+             (=> (program)
+                 (.emit socket 'message (.parse JSON program))))
+
+          (on  'message (msg)
+               (let (( context (crekte-context  (or msg.data {}))))
+                 (try (call-method Message-types msg.type msg context socket)
+                      (print e)))))))
+
+(def close-readline ()
+
+  (print "readline closed")
+
+  (.remove-all-listeners rl "line")
+  (.pause rl))
+
+(def-generic start-parsing-lisp ((s-expr (create-s-expr)))
+
+  (on remote-socket 'close  ()
+
+      (close-readline ))
+
+  (on rl 'line  (line)
+
+      (accumulate-lisp line s-expr)))
+
+(def accumulate-lines (char s-expr)
+  (accumulate-braced-form char s-expr send-completed-readline))
+
+(def accumulate-lisp (line s-expr)
+  (each-char-of line (accumulate-lines char s-expr )))
+
+(def start-readline ()
+  (print "client connected to repl")
+
+  (.resume rl)
+
+  (mediate remote-socket)
+  (start-parsing-lisp))
+
+(def send-completed-readline (program)
+  (send-lisp-message remote-socket program {}))
+
+(def initialize-remote-socket ()
+  (assign remote-socket (pipe net (.connect program start-readline))))
+
+;; TODO
+;; Get a repl working into bsd server node
+;; get a repl working into my laptop,
+;; get one working into michs laptop
+;; get a file server working with in this context,
+;; set up heroku as a mediator.
+;; share files from between my own nodes, with each serving a mediator and a node.
+
+
+;; (when program.mediator
+;;     (assign mediator (pipe net (.create-server  mediate) (.listen program.port))))
+(assign mediator (pipe net
+                       (.create-server  mediate)
+                       (.listen program.port initialize-remote-socket)))
+
+
+;;(send-lisp-message remote-socket "(console.log 'hi)" {})
+
+;; leave it here, figure out where your going with it, or call it done.
+;; time for a context switch, go back to working on fluid simulations for a bit.
+(console.log "hi")

@@ -1,0 +1,159 @@
+
+
+(type Mediator)
+(type User)
+(type Client)
+
+(type Meta-data)
+
+(type Tree-map )
+(describe Tree-map
+          (value null)
+          (parent null)
+          (init (value parent (*children (new Map))))
+          (gmth branch? ())
+          (gmth leaf? ())
+
+          (gmth find (seq (tree this))
+                (if (empty? seq)
+                    tree
+                    (let ((node (this.*children.get (first seq))))
+                      (if node (.find node (rest seq))
+                          false))))
+
+          (gmth insert (seq  (tree this) (*children tree.*map))
+                (let ((node (or (this.*children.get (first seq))
+                                (this.*children.set (first seq) ((create tree) null tree)))))
+                  (.set tree.node node)
+                  (.find node (rest seq))))
+
+          (gmth set (seq value)
+                (set (.insert tree  seq) 'value value))
+
+          (gmth each (f traverse-branches? leaf? *children )
+                (if traverse-branches?
+                    (.each *children node)
+                    (.each *children (cond leaf? f)))))
+
+(def discover-node  (path seq *tree)
+  (=> (stats)
+      (.set *tree seq
+            (if (.is-directory stats)
+                (.make Directory path )
+                (.make File path)))))
+(type File-system)
+
+(def fill-sub-dir ([p sub-path] seg) [ (then-do p (mkdir sub-path)) (Path.join sub-path seg) ])
+(def-curried set-value (v o) (assign o.value v))
+(def-curried reduce-promise (f a)
+  (.reduce a f [(Promise.resolve) ""]))
+
+(describe File-system
+          (init (root (*tree ((create Tree-map) ))))
+
+          (gmth get (path *tree (seq (.split path "/")) (node (.find *tree )))
+                (if node
+                    (.resolve Promise node)
+                    (.then (stat path) (discover-node path seq *tree))))
+          (gmth watch (path))
+
+          (gmth insert (path ( type File ) (fs this))
+                (catch (.get fs path)
+                  (let* ((seq (.split path "/"))
+                         (file-name (.pop seq)))
+                    (then-do (.reduce seq fill-sub-dir [(Promise.resolve) ""])
+                             ((create type) path ))))
+                )
+          (gmth set (path v ( type String ) (fs this))
+
+                (.then (.insert fs path type fs) (set-value v))
+                )
+          )
+(type String )
+(describe String
+          (init (path)))
+(type File)
+(type Timer)
+(macro easy-on (emitter event ...body)
+       `(on @emitter @event (@event) ...@body))
+(describe Rate-meter
+          (last (Date.now))
+          (init (emitter event (callback (.bind this.update this)))
+                )
+
+          (gmth start (emitter event  (timer this) (callback (-> (.update timer))))
+
+                (macro set-for (obj ...args)
+                       `(set @obj
+                             ...@(.concat [] (.map args
+                                                   (=> (a)
+                                                       (if (expression? a)
+                                                           [(first a.contents) (second a.content)]
+                                                           a))))))
+
+                (set timer '*running true 'callback callback)
+                ;;(.on emitter event callback)
+                (.on emitter event ))
+
+          (gmth stop (emitter event callback )
+
+                (.remove-listeners emitter 'event callback))
+          (gmth restart ())
+          (gmth update ()
+                (set timer
+                     'last (Date.now)
+                     )
+                )
+
+          )
+(describe File
+          (init (path (*watcher (chokidar.watch path))))
+
+
+          (gett value (read-file this.path))
+          (sett value v (write-file this.path v))
+
+          (gett bandwidth )
+          (gett latency )
+          (gett size )
+          (gett stats )
+
+          (gett creation-time )
+          (gett last-modified )
+          (gett permissions )
+          (gett owner )
+          (gett parent )
+
+          (gmth get-read-stream (path) (fs.create-read-stream path))
+          (gmth get-write-stream (path) (fs.create-write-stream path))
+
+          (gett read-stream (.get-read-stream this))
+          (gett write-stream (.get-write-stream this))
+
+          (gmth write ())
+          (gmth read ())
+          (gmth pipe ())
+          )
+
+(type Directory)
+(def defer (f args)
+  (=> ((dots args))))
+(describe Directory
+          (init (path))
+          (gett keys (readdir this.path))
+          (gett children (pipe this.keys
+                               (.map (=> (k) (Path.join this.path k)))
+                               (.map (=> (path) ())))))
+
+(type Repl)
+(type Parser)
+(type Network)
+(type Message)
+
+(type Remote-file-system)
+(type Remote-file)
+(type Remote-directory)
+
+
+(type Network-filesystem)
+

@@ -1,0 +1,40 @@
+
+(var methods-path "./methods")
+;; there are two types of messages, lisp, and file calls.
+(var Message-types {})
+
+(def-generic file-call (msg context socket)
+  (eval-file (Path.join methods-path msg.path) context (+ socket.remote-address ":" msg.path)))
+
+(def-generic lisp (msg context socket)
+  (eval-string msg.lisp (create-context (mixin [ msg.data Base-context ] )) (+ socket.remote-address ":lisp" )))
+
+(def-generic js-call (msg context socket))
+
+(def-generic ast-call (msg context socket))
+
+
+(def-generic send-message (socket object)
+  (.write socket (.stringify JSON object)))
+
+(def-generic send-lisp-message (socket lisp data)
+  (send-message socket
+                (lit
+                 (type 'lisp)
+                 lisp
+                 data)))
+
+
+(def-generic send-file-call-message (socket path data)
+  (send-message socket
+                (lit
+                 (type 'file-call)
+                 path
+                 data)))
+
+(describe Message-types
+          file-call
+          lisp
+          js-call
+          ast-call)
+

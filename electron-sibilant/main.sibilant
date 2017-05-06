@@ -1,0 +1,35 @@
+(namespace electron)
+
+(include "kit/macros" "kit/inc/shell")
+
+(import-namespace kit)
+(import-namespace shell)
+
+
+(require! {spawn} "child_process" 'readline)
+
+(var electron-process (spawn "npm" ["start"] { stdio [null null null "ipc"] })
+
+     rl (readline.create-interface
+         {
+         input process.stdin
+         output process.stdout
+         })
+     rl-ready false
+     )
+
+(electron-process.stdout.pipe process.stdout)
+(electron-process.stderr.pipe process.stderr)
+
+;; (var parens {
+;;      open 0
+;;      close 0
+;;      }
+;;      lisp-fragment "")
+
+;; (def build-message (line)
+;;   (each (.split line "") (char)
+;;         (if (= char "(")
+;;             (++ parens.open)
+;;             (= char ")")
+;;             (++ parens.close))))

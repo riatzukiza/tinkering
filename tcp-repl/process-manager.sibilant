@@ -1,0 +1,41 @@
+
+
+
+(include "./kit/macros"
+         "./kit/util")
+
+(import-namespace kit)
+
+(include "./macros")
+
+
+(require! 'fs 'http 'net  'readline 'vm 'crypto 'child_process
+          'express 'chokidar
+
+          Path 'path program 'commander R 'ramda
+
+
+
+          (lit create extend mixin) "./kit/js/util"
+          )
+
+
+(include
+
+ "./kit/src/sibilant-context.sibilant"
+ "./s-expr.sibilant"
+ "./messages.sibilant"
+ "./commandline-arguments.sibilant"
+ )
+
+
+(type Node-process
+
+      (init (path
+             (args [])
+             (*process (.fork child_process path args))))
+
+      (gmth send ()))
+
+(var processes (pipe (.readdir-sync fs "./services")
+                     (.map  (=> (path) (pipe ((create Node-process) path))))))

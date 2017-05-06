@@ -1,0 +1,9 @@
+(pipe program
+      (.option "-p, --path [path]" "path to watch files for, to use as root of the shared directory")
+      ;;(.option "-m, --mediator" "specify if this instance is to be run as a mediator" true)
+      (.option "-P, --port [number]" "the port to perform network communication over." 8130)
+      (.option "-i, --interactive" "start the program in repl mode.")
+
+      (.option "-s, --host [hostname]" "specify where to find a mediator." )
+
+      (.parse process.argv))

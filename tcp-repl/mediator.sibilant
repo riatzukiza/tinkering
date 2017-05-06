@@ -1,0 +1,13 @@
+(var Mediator {})
+
+(var mediator null)
+
+(describe Mediator
+          (init ((server (pipe net
+                               (.create-server  mediate)
+                               (.listen program.port initialize-remote-socket)))))
+          )
+
+(assign mediator (pipe net
+                       (.create-server  mediate)
+                       (.listen program.port initialize-remote-socket)))

@@ -1,0 +1,40 @@
+
+(include "./fp")
+
+(macro var-pipe (name ...pipe-body)
+       `(var @name (pipe ...@pipe-body)))
+
+(def-curried handle-line ( socket msg )
+  (socket.write (+ msg "\n")))
+
+(require! "net" "readline" "fs"
+
+          R "ramda"
+          )
+
+(def start-readline (socket)
+  (print "client connected to repl")
+  (.resume rl)
+
+  (.pipe socket process.stdout)
+
+  (on socket "close"  ()
+
+      (print "readline closed")
+
+      (.remove-all-listeners rl "line")
+      (.pause rl))
+
+  
+
+  (.on rl "line" (handle-line socket)))
+
+
+
+(var-pipe readline-server net
+
+          (.create-server start-readline)
+          (.listen  8120))
+
+
+

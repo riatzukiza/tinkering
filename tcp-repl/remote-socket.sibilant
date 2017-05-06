@@ -1,0 +1,20 @@
+
+
+(var remote-socket null)
+;; TODO
+;; Get a repl working into bsd server node
+;; get a repl working into my laptop,
+;; get one working into michs laptop
+;; get a file server working with in this context,
+;; set up heroku as a mediator.
+;; share files from between my own nodes, with each serving a mediator and a node.
+
+
+;; (when program.mediator
+;;     (assign mediator (pipe net (.create-server  mediate) (.listen program.port))))
+(def initialize-remote-socket ()
+  (assign remote-socket
+          (pipe net
+                (.connect program start-readline))))
+
+

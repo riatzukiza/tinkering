@@ -1,0 +1,9 @@
+(include "./by-lang/sibilant/kit/macros")
+(import-namespace kit)
+(require (lit spawn) 'child_process)
+(var server (spawn "terraria-server" [
+                   "-port 8150"
+                   "-players 8"
+                   "-"
+                   ]))
+(.write server "1\n")

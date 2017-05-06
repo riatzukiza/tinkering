@@ -1,0 +1,20 @@
+
+(on socket 'data (d)
+
+    (each-char-of (.to-string d)
+                  (accumulate-braced-form
+
+                   char s-expr
+
+                   (=> (program)
+                       (.emit socket 'message
+                              (.parse JSON program))))))
+
+
+
+(on socket 'message (msg)
+
+    (var context (create-context  (or msg.data {})))
+
+    (try (call-method-of Message-types msg.type msg socket) 
+         (print e)))

@@ -1,0 +1,7 @@
+
+(macro def-generic (name args ...body)
+       `(generic @name (def) @args ...@body))
+
+(macro each-char-of (s ...body)
+
+       `(.for-each (pipe @s (.split "")) (=> (char) ...@body)))

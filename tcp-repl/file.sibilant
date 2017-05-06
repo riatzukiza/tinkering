@@ -1,0 +1,21 @@
+
+(type File)
+(type Meta-data )
+
+(describe Meta-data)
+
+(describe File
+
+          (init (path))
+
+          (gett string)
+          (sett string)
+
+          (gett buffer)
+          (sett buffer)
+
+          (gmth pipe ())
+          (gmth write ())
+          (gmth read ())
+          (gmth watch ())
+          )
