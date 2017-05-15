@@ -1,0 +1,20 @@
+(scoped
+
+ (var sentance "this is a sentance, yes it is, there may be a Mario here.")
+
+ (var chars (.split sentance ""))
+
+ (var striped (.join (.filter chars (=> (c) (not (or (= c ",") (= c "."))))) ""))
+
+ (var marioified (.map (.split striped " ")
+                       (=> (w) (if (and (> w.length 2)
+                                        (not (or (= "a" (last w))
+                                                 (= "e" (last w))
+
+                                                 (= "i" (last w))
+
+                                                 (= "o" (last w))
+
+                                                 (= "u" (last w))))) (+ w "a") w))))
+
+ (print marioified))

@@ -1,0 +1,13 @@
+(include "kit/macros"
+         "kit/header"
+         )
+
+(import-namespace kit)
+
+(require! (lit File-system) "kit/js/file-system"
+          (lit Tree-map) "kit/js/"
+          )
+(type Cache )
+(type Module )
+(type Module-system )
+(def-describe Module-system ())

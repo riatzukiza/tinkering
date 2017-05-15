@@ -1,0 +1,40 @@
+(require! (lit spawn) "child_process")
+(var Descriptions)
+
+
+(type Interface)
+
+(def-describe Interface ()
+  (def create ())
+  (def extend ())
+  (def mix ())
+  (def register ())
+  )
+
+(type Process)
+(type Process-pool)
+
+(def-describe Process-pool (command args limit starting-size)
+  (limit 10)
+  (starting-size 2))
+
+(type Shell-process )
+(type Shell-message )
+(type Shell-system )
+
+
+(def-describe Process-system (path *process)
+  (def-generic start (path (*process (spawn "bash")))
+    (assign this.*process *process))
+
+  (def-generic stop ())
+
+  (def-generic fork ())
+
+  (def-generic send (path command)
+    )
+  (def-generic move ())
+
+  (def-generic pipe ())
+  )
+(def remove-directory ())

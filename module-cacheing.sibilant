@@ -1,0 +1,192 @@
+(require! "sibilant")
+
+(include "kit/macros"
+         "kit/header")
+
+(import-namespace kit)
+
+(include  "kit/sib/file-system/index")
+
+(include "kit/sib/data-structures/templates/tree")
+(include "kit/sib/data-structures/tree-map")
+(include "kit/sib/sibilant-context")
+(meta
+
+ (var *types (new Map))
+
+ (def init-expression? (e) (and (expression? e) (= (get (first e.contents) 'token)  'init)))
+ (def describer? (e) (not (init-expression? e)))
+
+ (def create-description (args ...body)
+   "define a type and describe it in a function like syntax. The arguements body is passed to the last instance of the init macro as its argument body."
+
+
+   (var init-form (pipe body (.filter  init-expression?)
+                        last
+                        ))
+   (var init-body (ternary init-form (rest init-form.contents) []))
+
+   (var description [ `(init @args ...@init-body)...(pipe body (.filter  describer?))])
+
+   `(let ((type (mixin (lit ...@description) }  )))
+      (mixin type (create type) )))
+
+ (macro might-have (*map token a b)
+        `(if (.has @*map @token)
+            @a
+            @b)
+        )
+ 
+ (macro *maybe-type-exists ((lit (token name)) a b)
+        `(might-have *types name
+             @a
+             @b))
+
+ (macro remember (*map token value)
+        `(might-have *map token 
+                     (.get @*map @token)
+                     (collect r @value (.set @*map @token r))))
+
+ (def macros.def-ext (name args ext ...body)
+   (*maybe-type-exists name
+                       (create-description args ...body)
+
+                       `(var @name (mixin @ext @(create-description  args ...[ `(symbol (property Symbol Name))...body]) ))))
+ (def macros.def-type (name args ...body)
+   "create a type, using this syntax extension is not allowed"
+
+   (*maybe-type-exists *types name
+
+                       (create-description args ...body)
+                       `(var @name @(create-description  args ...[ `(property symbol (Symbol (quote @name))) ...body])))))
+
+(def promise-all-calls (obj method  (dots args))
+  (.all Promise (.map args (=> (a) (.apply (get obj method) obj a)))))
+
+(def sibilant-path (path) (Path.join "sib" (+ path ".sibilant")))
+(def js-path (path) (Path.join "js" (+ path ".js")))
+
+(var watch-node (R.invoker 0 'watch))
+
+(var Module {
+     Pair {},
+     System {},
+     })
+
+(var all Promise.all)
+
+
+
+(def-type Atom ()
+  (def-type Registry ())
+  (def-type Container ())
+
+
+  )
+(var Atom {
+
+     })
+(def-type Javascript ()
+  (def-extension File ()))
+
+(comment "kind of playing with an idea here, for extension of types. defining things in
+neat trees like this would be cool. "
+         (def-type Sibilant ()
+
+           (def-ext File () File)
+           (def-ext Directory (extend Directory))
+           (def-ext Target (extend Javascript.File)))) 
+
+(def-type Sibilant ()
+
+  ( File  (extend File))
+  ( Directory (extend Directory))
+  ( Target (extend Javascript.File)))
+(var *types {})
+
+;; this is a solution for a totally different problem, the below will suffice, for what it is meant to
+;;(require! (lit File-system) "kit/sib/file-system/index")
+
+;; (if (.has *types name.token)
+
+;;     (collect r (def-describe @name @args ...@body)
+;;              (.push (.get *types name.token) r)
+;;              )
+
+;;     (collect r (transpile `(var @name (def-describe @name @args ...@body)))
+;;              (.set *types name.token [r])
+;;              ))
+
+(def-type Module-pair (pair)
+
+  (init (mixin  Sibilant.File (first pair))
+        (mixin  Javascript.File (second pair)))
+
+  (gett js (second this.pair))
+  (gett sib (first this.pair))
+
+  (def-generic compile (sib js) (then-do (.compile sib js.path) this))
+
+  (def-generic require ())
+  (def-generic include ())
+  (def-generic eval ()))
+
+(def-type Module-system (root  (sib (File-system (Path.join root "sib")))
+                               (js ( File-system (Path.join root "js")) )
+                               (modules (File-system (Path.join ".modules"))))
+  (doc "A module system controls the transformation and execution of sibilant files as javascript.
+
+sibilant -> javascript
+
+consists of two directories of similar key structure,
+one of sibilant files, the other of js that is the result of compiling those sibilant files.")
+
+  (def-generic find (path sib js )
+    "attempts to locate a module pairing given a path."
+
+    (.then (all [ (.find sib (sibilant-path path)) (.find js (js-path path)) ]) Module.Pair))
+
+  (def-generic insert (path js sib)
+    "creates a module pairing at the given path, if it does not already exist. Either node may be missing."
+    (all [(.insert sib path) (.insert js path)]))
+
+  (def-generic compile-all ()
+    "Perform a compiler pass on the sibilant file system, compiling all files regardless of if they're up to date."
+    )
+  (def-generic update ()
+    "Perform a compiler pass on out of date file pairs.")
+
+  (def-generic watch ()
+    "Watch the tree for changes")
+
+  (def set ()))
+
+(def-type Module ()
+  Module-pair
+  Module-system
+  )
+
+
+
+
+;; in the future, this module will also keep track of state changes between the two members of the pair,
+;; for instance, if we change the js file, we want to be careful about attempting to compile the lisp, in case the js
+;; has been changed in a breaking manner from the lisp, as this would result in a loss of data.
+
+;; for now, it is just a convenient mapping between the two file locations
+
+(def-type Sibilant (string)
+
+  (def-generic compile (  string)
+    (pipe (resolve string) (.then  transpile-sibilant)))
+
+  (def-generic eval (string)
+    (pipe (resolve string) (.then eval-string  ))))
+
+(def-type Javascript (string)
+  (def-generic eval (string)))
+
+
+
+(var modules-folder (File-system "./modules"))
+(var modules ( Module-system "./"))

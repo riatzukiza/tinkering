@@ -1,0 +1,50 @@
+
+;; (def-macro def-generic-macro (name args ...body)
+;;   `(generic @name (def-macro) @args ...@body))
+;; (def-generic-macro test (a)
+;;   a)
+
+(include "./macros.sibilant")
+
+(var *types (new Map))
+
+(macro def-type (name args ...body))
+(type Factory)
+(describe Factory
+          (*factories (new Map))
+          (def-generic create ( interface )
+
+            (var type (mixin interface (lit init)))
+            (mixin (create type) init ))
+
+          (def-generic register (name factory *factories)
+            (unless (.has *factories name)
+              (.set *factories name factory)
+                ))
+
+          (def-generic describe (name interface)))
+
+(def-type Sibilant ())
+(def-type Javascript ())
+(def-type Module (*js *src))
+
+(def-type Kit ((*apps (new Map))))
+
+(def-type Application  ((*types (new Map)) (*namespaces (new Map))))
+
+(def-type Namespace (name (*types (new Map)) (*namespaces (new Map)))
+
+  (init ())
+
+  (def-generic def-type (name object *types))
+  (def-generic use (name)))
+(def create-factory (init interface)
+
+  (var type (mixin interface (lit init)))
+  (mixin (create type) init ))
+(def )
+
+
+
+
+

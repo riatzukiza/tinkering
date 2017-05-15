@@ -1,0 +1,3 @@
+(print "hello module world")
+(def hi-again ())
+(macro will-still-have-to-be-read ())

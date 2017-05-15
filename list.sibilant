@@ -1,0 +1,214 @@
+(include "kit/macros"
+         "kit/header")
+(var Descriptions {})
+(import-namespace kit)
+;; (def List-like (*unit (default interface {}))
+
+;;   (def List (*list) ((create List) *list))
+;;   (mixin  interface List)
+
+;;   )
+(alias-macro def-description def-describe)
+
+(type List-like)
+(def-describe List-like ( )
+
+  (gett create (create this))
+
+  (def-generic push (value *list)
+    "add a value to the end of the list"
+    (.push *list value))
+
+  (def-generic pop (*list)
+    "remove a value from the end of a list"
+    (.create this (.pop *list)))
+
+  (def-generic shift (*list)
+    "remove a value from the start of a list"
+    (.create this (.shift *list)))
+
+  (def-generic unshift (value *list)
+    "add a value to the start of a list"
+    (.unshift *list value))
+  (def-generic every (f *list)
+    (loop (collect r true)
+       (for-up-to i *list.length
+                  (if! (not (f (get *list i) i))
+                       (assign r false)
+                       break)))) 
+
+  (def-generic each (f *list)
+    "apply a function over every element, return values are ignored"
+    (.each *list f)
+    this)
+
+  (def-generic map (f *list)
+    "apply a function over every element, constructing a new list from the values returned"
+    (.create this (.map *list f)))
+
+  (def-generic bind (f *list)
+    "List Monad bind function, for handling lists of lists"
+    (print "binding list" *list)
+    (loop (collect r (.create this ))
+       (each *list (a))
+       (each (f a) (b))
+       (.push r b)))
+
+  (def **QUERY (l) (ternary l.*list true false))
+
+  (def-generic lift (f)
+    (=> (v)
+        (var r (f v))
+        (if (List-like.? r)
+            r.*list
+            (Array.is-array r)
+            r
+            [])))
+  (def-generic eq (a *list)
+    (var node *list.head)
+
+    (.every a (=> (v)
+                  (var t (= v node.value))
+                  (assign node node.next)
+                  t)))
+
+  (def-generic ap (a *list )
+    (map *list (f i) (f (get a i) i))
+    )
+  (def-generic get (i *list)
+    (this.*get i *list))
+
+  (def-generic rbind ()
+    "recursive bind operation")
+
+  (def-generic concat ()))
+(def Array.prototype.each (f)
+  (.for-each this f)
+  this)
+
+(def fprint (f (dots strings))
+  (lambda ((dots values))
+    (var r (f (dots values)))
+    (print (dots strings) (dots values) "->" r)
+    r
+
+    ))
+
+(specify Array-list (extend List-like)
+
+         
+         )
+
+(def-describe Array-list ((*list []))
+  (def-generic *get (i *list)
+    (get *list i)))
+
+(let ((list ((create Array-list) [ 1 2 3 4 ])))
+  (pipe list
+        (.map  (fprint (=> (x) (+ x 1)) "n+1"))
+
+        ((cond (=> (a) (print "every value must be equal" a)
+                   (.every a (fprint (=> (v i) (= v (+ (.get list i) 1 )))
+                                  "check every value of the array for equality")))
+               (=> (a) a)
+               (-> (throw (new Type-error "every value was not incremented in the new array")))))
+
+        (.map (fprint (Array-list.lift (=> (n) [n (+ n 1)])) "[n,n+1]"))
+
+        (.bind (fprint (=> (v) v) "identity"))))
+
+
+(require! (lit Event-emitter) "events" "assert")
+
+(require! (lit List) "./js/list.js")
+(specify Linked-list (extend List-like))
+(macro capture (args var-name value ...body)
+       `(=> @args (collect @var-name @value ...@body)))
+(def-describe Linked-list ((*list (new List)))
+  (def-generic *get (n *list)
+    (var i 0)
+    (.find *list (capture (node) t (= i n)
+
+                  (++  i))))
+
+  (def create ((dots args))
+    ((create Linked-list) (create-list (dots args))))
+
+  (def-generic map (f *list)
+    (collect r ((create Linked-list))
+             (each *list (a) (.push r (f a))))))
+
+(def create-list ((dots args))
+  (collect r (new List) (each args (a) (.push r a))))
+
+(let ((list (.create Linked-list 1 2 3 4) ))
+  (var i 0)
+  (assert (pipe list
+
+         (each  (l)
+                (var r (pipe list (.get i)))
+
+                (print "checking" l r i)
+
+                (++ i)
+
+                (assert (= r l) ("list elements are not the same" r "===" l) ))
+
+         (.map  (fprint (=> (x) (+ x 1)) "n+1"))
+
+         ((cond (=> (a)
+                    (.every a (fprint (=> (v i) (= v (+ (.get list i) 1 )))
+                                      "check every value of the array for equality")))
+                (=> (a) a)
+                (-> (throw (new Type-error "every value was not incremented in the new array")))))
+
+         (.map (fprint (=> (n) (.create Linked-list n (+ n 1))) "[n,n+1]"))
+         ((aprint "mapped"))
+         (.bind (fprint (=> (n) n) "Identity") )
+         (.eq (.create Linked-list 2 3 3 4 4 5 5 6))) "Equal lists are not equal"))
+
+(type Stream )
+
+(def-describe Stream ((*list ((create Array-list) ))
+                      (*event (new Event-emitter))
+                      (*flowing false))
+
+
+  (def-generic write (d *list *event)
+
+    (.push *list d)
+    (.emit *event 'write d))
+
+  (def-generic read ((n 1) *out *event)
+    (loop (collect r (.create Linked-list))
+       (do-times n
+         (var d (.unshift *queue))
+
+         (.emit *event 'read d)
+         (.push r d))))
+
+  (gett create (create this))
+
+  (def-generic start (*event *queue)
+
+    (assign this.*flowing true)
+    (.read this *queue.length)
+    this)
+
+  (def-generic stop ())
+
+  (def-generic each (f *event)
+    (.on *event 'data f)
+    this)
+  (def-generic map (f *event)
+    ))
+
+(let ((stream (.create Stream)))
+
+  (pipe stream
+        (.start )
+        (.each (aprint "streaming") ))
+
+  (do-times 10 (.write stream i))
+  )
+
